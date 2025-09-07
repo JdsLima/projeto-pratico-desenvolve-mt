@@ -1,52 +1,66 @@
-import { Card, CardContent, CardFooter } from "./ui/Card";
+import { Card, CardContent, CardFooter } from "@/Components/ui/Card";
 import { Calendar, MapPin, User } from "lucide-react";
-import { ImageWithFallback } from "./ui/ImageWithFallback";
-import { Person } from "@/app/types/types";
-import { Button } from "./ui/Button";
+import { ImageWithFallback } from "@/Components/ui/ImageWithFallback";
+import { PessoaDTO } from "@/app/types/types";
+import { Button } from "@/Components/ui/Button";
+import { Badge } from "@radix-ui/themes";
 
 interface PersonCardProps {
-  person: Person;
-  onViewDetails: (person: Person) => void;
+  person: PessoaDTO;
+  onViewDetails: (person: PessoaDTO) => void;
 }
 
 export function PersonCard({ person, onViewDetails }: PersonCardProps) {
   const statusText =
-    person.status === "missing" ? "Desaparecido" : "Localizado";
+    person.ultimaOcorrencia.dataLocalizacao === null
+      ? "Desaparecido"
+      : "Localizado";
 
   return (
-    <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
+    <Card className="w-full max-w-sm justify-between hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
             <ImageWithFallback
-              src={person.photo}
-              alt={person.name}
-              className="w-24 h-24 rounded-full object-cover"
+              src={person.urlFoto}
+              alt={person.nome}
+              className="w-45 h-45 rounded-full object-cover"
             />
-            <span className="border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90 absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+            <Badge
+              className="w-full justify-center mt-2.5"
+              color={
+                person.ultimaOcorrencia.dataLocalizacao === null
+                  ? "red"
+                  : "blue"
+              }
+              size={"3"}
+            >
               {statusText}
-            </span>
+            </Badge>
           </div>
 
           <div className="text-center space-y-2 w-full">
-            <h3 className="font-semibold truncate">{person.name}</h3>
+            <h3 className="font-semibold truncate">{person.nome}</h3>
 
             <div className="flex items-center justify-center gap-1 text-muted-foreground">
               <User className="w-4 h-4" />
-              <span>{person.age} anos</span>
+              <span>{person.idade} anos</span>
             </div>
 
-            <div className="flex items-start gap-1 text-muted-foreground">
+            <div className="flex justify-center items-start gap-1 text-muted-foreground">
               <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span className="text-sm line-clamp-2">
-                {person.lastSeen.location}
+                {person.ultimaOcorrencia.localDesaparecimentoConcat}
               </span>
             </div>
 
             <div className="flex items-center justify-center gap-1 text-muted-foreground">
               <Calendar className="w-4 h-4" />
               <span className="text-sm">
-                {new Date(person.lastSeen.date).toLocaleDateString("pt-BR")}
+                {new Date(
+                  person.ultimaOcorrencia.dataLocalizacao ??
+                    person.ultimaOcorrencia.dtDesaparecimento
+                ).toLocaleDateString("pt-BR")}
               </span>
             </div>
           </div>

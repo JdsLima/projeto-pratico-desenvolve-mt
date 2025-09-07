@@ -1,13 +1,43 @@
 "use client";
+import { FilterPerson, filterProps } from "@/Components/FilterPerson";
 import { PersonCard } from "@/Components/PersonCard";
+import api from "@/services/api";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { PessoaPaginadaResponse } from "./types/types";
 
 export default function Home() {
   const router = useRouter();
+  const [pensonData, setPersonData] = useState<PessoaPaginadaResponse | null>(
+    null
+  );
 
-  const handleViewDetails = (ocorrenciaId: string) => {
+  const handleViewDetails = (ocorrenciaId: number) => {
     router.push(`/detalhes/${ocorrenciaId}`);
   };
+
+  const handleSearch = async (data: filterProps | null) => {
+    const filters = {
+      nome: data?.name ?? "",
+      faixaIdadeInicial: data?.minAge ?? 0,
+      faixaIdadeFinal: data?.maxAge ?? 0,
+      sexo: data?.gender && data.gender === "Todos" ? "" : data?.gender,
+      status: data?.status && data.status === "Todos" ? "" : data?.status,
+    };
+
+    try {
+      const res = await api.get("/pessoas/aberto/filtro", { params: filters });
+
+      console.log(res.data);
+      setPersonData(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    handleSearch(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,36 +49,18 @@ export default function Home() {
             Ajude a encontrar pessoas desaparecidas ou registre informações
             sobre pessoas localizadas. Cada informação pode fazer a diferença.
           </p>
+          <FilterPerson handleSearch={handleSearch} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
-          <PersonCard
-            person={{
-              id: "2",
-              name: "João Pedro Oliveira",
-              age: 28,
-              photo:
-                "https://images.unsplash.com/photo-1611695434398-4f4b330623e6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b3VuZyUyMG1hbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc1NzEwMjQzOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-              status: "found",
-              lastSeen: {
-                date: "2025-01-02",
-                location: "Vila Madalena, São Paulo",
-              },
-              description:
-                "Rapaz alto, moreno, tatuagem no braço direito. Foi encontrado em hospital após acidente.",
-              characteristics: {
-                height: "1,82m",
-                weight: "75kg",
-                eyeColor: "Castanhos escuros",
-                hairColor: "Preto",
-              },
-              contactInfo: {
-                phone: "(11) 98888-5678",
-                email: "mae.joao@email.com",
-              },
-              createdAt: "2025-01-02T14:20:00Z",
-            }}
-            onViewDetails={() => handleViewDetails("123")}
-          />
+          {pensonData?.content.map((person) => (
+            <PersonCard
+              key={person.id}
+              person={person}
+              onViewDetails={() =>
+                handleViewDetails(person.ultimaOcorrencia.ocoId)
+              }
+            />
+          ))}
         </div>
       </div>
     </div>
