@@ -2,7 +2,7 @@
 import { FilterPerson, filterProps } from "@/Components/FilterPerson";
 import { PersonCard } from "@/Components/PersonCard";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { PessoaPaginadaResponse } from "./types/types";
 import { PeopleResume } from "@/Components/PeopleResume";
 import ReactPaginate from "react-paginate";
@@ -10,9 +10,11 @@ import { Skeleton } from "@radix-ui/themes";
 import api from "@/services/api";
 import { Alert } from "@/Components/ui/Alert";
 import axios from "axios";
+import { MainContext } from "@/contexts/mainContext";
 
 export default function Home() {
   const router = useRouter();
+  const { currentPage, handleChangePage } = useContext(MainContext);
   const [personData, setPersonData] = useState<PessoaPaginadaResponse | null>(
     null
   );
@@ -25,9 +27,8 @@ export default function Home() {
     faixaIdadeFinal: 0,
     sexo: "",
     status: "",
-    pagina: 0,
+    pagina: currentPage - 1,
   });
-  const [currentPage, setCurrentPage] = useState(1);
   const [alertStatus, setAlertStatus] = useState({
     isOpen: false,
     title: "",
@@ -46,30 +47,41 @@ export default function Home() {
     router.push(`/detalhes/${ocorrenciaId}`);
   };
 
-  const handleChangeFilters = useCallback((data: filterProps | null) => {
-    setFilters({
-      nome: data?.nome ?? "",
-      faixaIdadeInicial: data?.faixaIdadeInicial ?? 0,
-      faixaIdadeFinal: data?.faixaIdadeFinal ?? 0,
-      sexo:
-        data?.sexo && data.sexo === "Todos" ? "" : data?.sexo ? data.sexo : "",
-      status:
-        data?.status && data.status === "Todos"
-          ? ""
-          : data?.status
-          ? data.status
-          : "",
-      pagina: data?.pagina ?? 0,
-    });
-  }, []);
+  const handleChangeFilters = useCallback(
+    (data: filterProps | null) => {
+      setFilters({
+        nome: data?.nome ?? "",
+        faixaIdadeInicial: data?.faixaIdadeInicial ?? 0,
+        faixaIdadeFinal: data?.faixaIdadeFinal ?? 0,
+        sexo:
+          data?.sexo && data.sexo === "Todos"
+            ? ""
+            : data?.sexo
+            ? data.sexo
+            : "",
+        status:
+          data?.status && data.status === "Todos"
+            ? ""
+            : data?.status
+            ? data.status
+            : "",
+        pagina: data?.pagina ?? 0,
+      });
+
+      if (!data?.pagina) {
+        handleChangePage(1);
+      }
+    },
+    [handleChangePage]
+  );
 
   const handlePageClick = useCallback(
     (selectedItem: { selected: number }) => {
       const pageID = selectedItem.selected;
-      setCurrentPage(pageID + 1);
+      handleChangePage(pageID + 1);
       handleChangeFilters({ ...filters, pagina: pageID });
     },
-    [filters, handleChangeFilters]
+    [filters, handleChangeFilters, handleChangePage]
   );
 
   const handleGetResume = async () => {
@@ -188,6 +200,7 @@ export default function Home() {
             nextLabel={"Próximo →"}
             breakLabel={"..."}
             pageCount={personData?.totalPages}
+            forcePage={currentPage - 1}
             marginPagesDisplayed={2}
             pageRangeDisplayed={3}
             onPageChange={handlePageClick}
