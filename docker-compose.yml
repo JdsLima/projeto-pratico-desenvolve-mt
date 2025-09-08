@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules  # Evita conflito com node_modules do host
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
