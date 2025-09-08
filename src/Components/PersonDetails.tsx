@@ -261,6 +261,7 @@ export function PersonDetails({ person }: DetailsProps) {
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
+                max={new Date().toISOString().split("T")[0]}
               />
             </label>
 
