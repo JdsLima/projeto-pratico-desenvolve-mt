@@ -1,67 +1,205 @@
 "use client";
 import { FilterPerson, filterProps } from "@/Components/FilterPerson";
 import { PersonCard } from "@/Components/PersonCard";
-import api from "@/services/api";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PessoaPaginadaResponse } from "./types/types";
+import { PeopleResume } from "@/Components/PeopleResume";
+import ReactPaginate from "react-paginate";
+import { Skeleton } from "@radix-ui/themes";
+import api from "@/services/api";
+import { Alert } from "@/Components/ui/Alert";
+import axios from "axios";
 
 export default function Home() {
   const router = useRouter();
-  const [pensonData, setPersonData] = useState<PessoaPaginadaResponse | null>(
+  const [personData, setPersonData] = useState<PessoaPaginadaResponse | null>(
     null
   );
+  const [isLoading, setIsloading] = useState(false);
+  const [missing, setMissing] = useState(0);
+  const [found, setFound] = useState(0);
+  const [filters, setFilters] = useState({
+    nome: "",
+    faixaIdadeInicial: 0,
+    faixaIdadeFinal: 0,
+    sexo: "",
+    status: "",
+    pagina: 0,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [alertStatus, setAlertStatus] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
+  const closeAlert = () => {
+    setAlertStatus({
+      isOpen: false,
+      title: "",
+      message: "",
+    });
+  };
 
   const handleViewDetails = (ocorrenciaId: number) => {
     router.push(`/detalhes/${ocorrenciaId}`);
   };
 
-  const handleSearch = async (data: filterProps | null) => {
-    const filters = {
-      nome: data?.name ?? "",
-      faixaIdadeInicial: data?.minAge ?? 0,
-      faixaIdadeFinal: data?.maxAge ?? 0,
-      sexo: data?.gender && data.gender === "Todos" ? "" : data?.gender,
-      status: data?.status && data.status === "Todos" ? "" : data?.status,
-    };
+  const handleChangeFilters = useCallback((data: filterProps | null) => {
+    setFilters({
+      nome: data?.nome ?? "",
+      faixaIdadeInicial: data?.faixaIdadeInicial ?? 0,
+      faixaIdadeFinal: data?.faixaIdadeFinal ?? 0,
+      sexo:
+        data?.sexo && data.sexo === "Todos" ? "" : data?.sexo ? data.sexo : "",
+      status:
+        data?.status && data.status === "Todos"
+          ? ""
+          : data?.status
+          ? data.status
+          : "",
+      pagina: data?.pagina ?? 0,
+    });
+  }, []);
 
+  const handlePageClick = useCallback(
+    (selectedItem: { selected: number }) => {
+      const pageID = selectedItem.selected;
+      setCurrentPage(pageID + 1);
+      handleChangeFilters({ ...filters, pagina: pageID });
+    },
+    [filters, handleChangeFilters]
+  );
+
+  const handleGetResume = async () => {
+    setIsloading(true);
     try {
-      const res = await api.get("/pessoas/aberto/filtro", { params: filters });
+      const res = await api.get("/pessoas/aberto/estatistico");
 
-      console.log(res.data);
-      setPersonData(res.data);
-    } catch (error) {
+      setFound(res.data.quantPessoasEncontradas);
+      setMissing(res.data.quantPessoasDesaparecidas);
+    } catch (error: unknown) {
       console.error(error);
+
+      if (axios.isAxiosError(error)) {
+        setAlertStatus({
+          isOpen: true,
+          message: error.response?.data?.detail ?? "Erro desconhecido.",
+          title: "Erro ao buscar dados do resumo",
+        });
+      } else {
+        setAlertStatus({
+          isOpen: true,
+          message: "Erro desconhecido.",
+          title: "Erro ao buscar dados do resumo",
+        });
+      }
+    } finally {
+      setIsloading(false);
     }
   };
 
-  useEffect(() => {
-    handleSearch(null);
+  const handleSearch = useCallback(async (_filters: typeof filters) => {
+    setIsloading(true);
+    try {
+      const res = await api.get("/pessoas/aberto/filtro", {
+        params: _filters,
+      });
+
+      setPersonData(res.data);
+    } catch (error: unknown) {
+      console.error(error);
+
+      if (axios.isAxiosError(error)) {
+        setAlertStatus({
+          isOpen: true,
+          message: error.response?.data?.detail ?? "Erro desconhecido.",
+          title: "Erro ao buscar dados",
+        });
+      } else {
+        setAlertStatus({
+          isOpen: true,
+          message: "Erro desconhecido.",
+          title: "Erro ao realizar a busca dos dados",
+        });
+      }
+    } finally {
+      setIsloading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    handleGetResume();
+  }, []);
+
+  useEffect(() => {
+    handleSearch(filters);
+  }, [filters, handleSearch]);
 
   return (
     <div className="min-h-screen bg-background">
+      <Alert
+        isOpen={alertStatus.isOpen}
+        message={alertStatus.message}
+        title={alertStatus.title}
+        handleClose={closeAlert}
+      />
       <div className="container mx-auto p-4 space-y-8">
-        {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold">Pessoas Desaparecidas</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Ajude a encontrar pessoas desaparecidas ou registre informações
             sobre pessoas localizadas. Cada informação pode fazer a diferença.
           </p>
-          <FilterPerson handleSearch={handleSearch} />
+          <PeopleResume
+            isLoading={isLoading}
+            desaparecidas={missing}
+            encontradas={found}
+          />
+          <FilterPerson handleSearch={handleChangeFilters} />
+        </div>
+        <div className="flex justify-end items-center">
+          <p className="text-muted-foreground">
+            Página {currentPage} de {personData?.totalPages}
+          </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
-          {pensonData?.content.map((person) => (
-            <PersonCard
-              key={person.id}
-              person={person}
-              onViewDetails={() =>
-                handleViewDetails(person.ultimaOcorrencia.ocoId)
-              }
-            />
-          ))}
+          {isLoading
+            ? [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <Skeleton
+                  key={i}
+                  width="20vw"
+                  minWidth={"280px"}
+                  height="450px"
+                />
+              ))
+            : personData?.content.map((person) => (
+                <PersonCard
+                  key={person.id}
+                  person={person}
+                  onViewDetails={() => handleViewDetails(person.id)}
+                />
+              ))}
         </div>
+        {personData?.totalPages && personData?.totalPages > 0 && (
+          <ReactPaginate
+            previousLabel={"← Anterior"}
+            nextLabel={"Próximo →"}
+            breakLabel={"..."}
+            pageCount={personData?.totalPages}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={3}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            activeClassName={"active"}
+            previousClassName={"page-item"}
+            nextClassName={"page-item"}
+            pageClassName={"page-item"}
+            breakClassName={"page-item"}
+            disabledClassName={"disabled"}
+          />
+        )}
       </div>
     </div>
   );

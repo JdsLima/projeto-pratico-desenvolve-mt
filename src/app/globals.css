@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @custom-variant dark (&:is(.dark *));
 
+
 :root {
   --font-size: 16px;
   --background: #ffffff;
@@ -127,6 +128,29 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  .pagination {
+    @apply flex justify-center flex-wrap items-center mt-5 gap-2;
+  }
+
+  .page-item {
+    @apply px-2 py-1.5 border border-gray-200 rounded-xl bg-white text-gray-800 text-sm 
+          hover:bg-gray-100 transition duration-200 cursor-pointer;
+    
+    @apply sm:px-3.5 sm:py-2 sm:text-base;
+  }
+
+  .active {
+    @apply bg-primary text-white border-none;
+  }
+
+  .disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .break {
+    @apply px-3 py-1.5 text-gray-500;
   }
 }
 
