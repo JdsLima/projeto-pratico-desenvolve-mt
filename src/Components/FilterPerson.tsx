@@ -3,30 +3,48 @@ import { useState } from "react";
 import { Button } from "./ui/Button";
 
 export interface filterProps {
-  name: string;
-  minAge: number;
-  maxAge: number;
-  gender: string;
+  nome: string;
+  faixaIdadeInicial: number;
+  faixaIdadeFinal: number;
+  sexo: string;
   status: string;
+  pagina: number;
 }
 
 interface FilterPersonProps {
-  handleSearch: ({ name, minAge, maxAge, gender, status }: filterProps) => void;
+  handleSearch: ({
+    nome,
+    faixaIdadeInicial,
+    faixaIdadeFinal,
+    sexo,
+    status,
+    pagina,
+  }: filterProps) => void;
 }
 
 export function FilterPerson({ handleSearch }: FilterPersonProps) {
-  const [name, setName] = useState("");
-  const [minAge, setMinAge] = useState(0);
-  const [maxAge, setMaxAge] = useState(0);
-  const [gender, setGender] = useState("");
+  const [nome, setNome] = useState("");
+  const [faixaIdadeInicial, setFaixaIdadeInicial] = useState(0);
+  const [faixaIdadeFinal, setFaixaIdadeFinal] = useState(0);
+  const [sexo, setSexo] = useState("");
   const [status, setStatus] = useState("");
+  const [pagina, setPagina] = useState(0);
 
   const handleClear = () => {
-    setName("");
-    setMinAge(0);
-    setMaxAge(0);
-    setGender("");
+    setNome("");
+    setFaixaIdadeInicial(0);
+    setFaixaIdadeFinal(0);
+    setSexo("");
     setStatus("");
+    setPagina(0);
+    handleSearch({
+      nome,
+      faixaIdadeInicial,
+      faixaIdadeFinal,
+      sexo,
+      status,
+      pagina,
+    });
   };
 
   return (
@@ -45,8 +63,8 @@ export function FilterPerson({ handleSearch }: FilterPersonProps) {
             id="name-filter"
             type="text"
             placeholder="Digite o nome"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-[8px] bg-white text-black"
           />
         </div>
@@ -59,8 +77,8 @@ export function FilterPerson({ handleSearch }: FilterPersonProps) {
             type="number"
             min="0"
             placeholder="0"
-            value={minAge}
-            onChange={(e) => setMinAge(Number(e.target.value))}
+            value={faixaIdadeInicial}
+            onChange={(e) => setFaixaIdadeInicial(Number(e.target.value))}
             className="px-3 py-2 border border-gray-300 rounded-[8px] bg-white text-black"
           />
         </div>
@@ -73,8 +91,8 @@ export function FilterPerson({ handleSearch }: FilterPersonProps) {
             type="number"
             min="0"
             placeholder="99"
-            value={maxAge}
-            onChange={(e) => setMaxAge(Number(e.target.value))}
+            value={faixaIdadeFinal}
+            onChange={(e) => setFaixaIdadeFinal(Number(e.target.value))}
             className="px-3 py-2 border border-gray-300 rounded-[8px] bg-white text-black"
           />
         </div>
@@ -82,7 +100,7 @@ export function FilterPerson({ handleSearch }: FilterPersonProps) {
           <label htmlFor="gender-filter" className="mb-1 font-medium text-left">
             Gênero
           </label>
-          <Select.Root size={"3"} value={gender} onValueChange={setGender}>
+          <Select.Root size={"3"} value={sexo} onValueChange={setSexo}>
             <Select.Trigger id="gender-filter" />
             <Select.Content>
               <Select.Item value="Todos">Todos</Select.Item>
@@ -113,7 +131,16 @@ export function FilterPerson({ handleSearch }: FilterPersonProps) {
           Limpar
         </Button>
         <Button
-          onClick={() => handleSearch({ name, minAge, maxAge, gender, status })}
+          onClick={() =>
+            handleSearch({
+              nome,
+              faixaIdadeInicial,
+              faixaIdadeFinal,
+              sexo,
+              status,
+              pagina,
+            })
+          }
           className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition"
         >
           Buscar
