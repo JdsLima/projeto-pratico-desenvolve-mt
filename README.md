@@ -44,7 +44,7 @@ Instale todas as dependências
 npm install
 ```
 
-Primeiro, inicialize o servidor de teste:
+Inicialize o servidor de teste:
 
 ```bash
 npm run dev
